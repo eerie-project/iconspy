@@ -54,7 +54,12 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#Load-and-prepare-the-example-data">Load and prepare the example data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Define-the-stations-we-want-to-connect">Define the stations we want to connect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Target-and-Model-stations">Target and Model stations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#The-target-station">The target station</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#The-model-station">The model station</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#Connect-stations-to-form-sections">Connect stations to form sections</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Connect-sections-to-form-a-region">Connect sections to form a region</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Reconstruct-sections-from-a-region">Reconstruct sections from a region</a></li>
@@ -100,14 +105,16 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">cartopy.crs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ccrs</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">iconspy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ispy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">iconspy.demo_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_plot_area_quickstart</span><span class="p">,</span> <span class="n">setup_plot_area_mar</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">cmocean.cm</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cmo</span>
 </pre></div>
 </div>
 </div>
 <section id="Load-and-prepare-the-example-data">
 <h2>Load and prepare the example data<a class="headerlink" href="#Load-and-prepare-the-example-data" title="Link to this heading"></a></h2>
-<p>We will load from netcdf files as <code class="docutils literal notranslate"><span class="pre">tgrid</span></code> which describes the model grid, and an <code class="docutils literal notranslate"><span class="pre">fxgrid</span></code> which contains bathymetry information.</p>
+<p>We will load from netcdf files a <code class="docutils literal notranslate"><span class="pre">tgrid</span></code> which describes the model grid, and an <code class="docutils literal notranslate"><span class="pre">fxgrid</span></code> which contains bathymetry information.</p>
 <p>We then have to put them in a format that <code class="docutils literal notranslate"><span class="pre">iconspy</span></code> can understand. For the <code class="docutils literal notranslate"><span class="pre">tgrid</span></code> this means calling <code class="docutils literal notranslate"><span class="pre">ispy.convert_tgrid_data</span></code>, and for the the <code class="docutils literal notranslate"><span class="pre">fxgrid</span></code> we must make sure the dimensions have the correct names.</p>
+<p>The call to <code class="docutils literal notranslate"><span class="pre">convert_tgrid_data</span></code> can be slow on large grids. For R2B4 (~100 km) grids the conversion is near instantaneous; however for an R2B9 (~5 km) grid this can take around 30 seconds.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -134,203 +141,316 @@
 </div>
 </div>
 </section>
-<section id="Define-the-stations-we-want-to-connect">
-<h2>Define the stations we want to connect<a class="headerlink" href="#Define-the-stations-we-want-to-connect" title="Link to this heading"></a></h2>
-<p>To define a section we need two or more points to connect. Typically we have a rough idea of where we want these points to be, and we would like to choose the model grid points closest to these coordinates. Sometimes we have a desire for one of the points to be on land.</p>
-<p>In the below we will define a section near Fram Strait, stretching from a point on Greenland to a point offshore.</p>
-<div class="nbinput nblast docutils container">
+<section id="Overview">
+<h2>Overview<a class="headerlink" href="#Overview" title="Link to this heading"></a></h2>
+<p>When constructing a region or a section a typical workflow will be to define a set of <code class="docutils literal notranslate"><span class="pre">TargetStation</span></code>s which we want to connect. We convert these into <code class="docutils literal notranslate"><span class="pre">ModelStation</span></code>s which lie on the model grid, before joining them together to form <code class="docutils literal notranslate"><span class="pre">Section</span></code>s or <code class="docutils literal notranslate"><span class="pre">Region</span></code>s.</p>
+</section>
+<section id="Target-and-Model-stations">
+<h2>Target and Model stations<a class="headerlink" href="#Target-and-Model-stations" title="Link to this heading"></a></h2>
+<section id="The-target-station">
+<h3>The target station<a class="headerlink" href="#The-target-station" title="Link to this heading"></a></h3>
+<p>When creating sections or regions, we typically start with a set of points we want to connect. Such points are represented in <code class="docutils literal notranslate"><span class="pre">ispy</span></code> as a <code class="docutils literal notranslate"><span class="pre">TargetStation</span></code>. A <code class="docutils literal notranslate"><span class="pre">TargetStation</span></code> object is initialised with a name, the target points longitude followed by its latitude, and finally a boolean stating whether we want the point to be on the land boundary or in the ocean.</p>
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">setup_plot_area</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">):</span>
-    <span class="n">Slat</span><span class="p">,</span> <span class="n">Nlat</span> <span class="o">=</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span>
-    <span class="n">Wlon</span><span class="p">,</span> <span class="n">Elon</span> <span class="o">=</span> <span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">0</span>
-
-    <span class="n">edges_in_region</span> <span class="o">=</span> <span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;edge&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-        <span class="p">(</span><span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;elon&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">Wlon</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;elon&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">Elon</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;elat&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">Slat</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;elat&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">Nlat</span><span class="p">)</span>
-        <span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
-
-
-    <span class="n">lons</span> <span class="o">=</span> <span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;vlon&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">vertex</span><span class="o">=</span><span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;edge_vertices&quot;</span><span class="p">])</span>
-    <span class="n">lats</span> <span class="o">=</span> <span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;vlat&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">vertex</span><span class="o">=</span><span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;edge_vertices&quot;</span><span class="p">])</span>
-
-    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
-
-    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges_in_region</span><span class="p">:</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-            <span class="n">lons</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">edge</span><span class="o">=</span><span class="n">edge</span><span class="p">),</span>
-            <span class="n">lats</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">edge</span><span class="o">=</span><span class="n">edge</span><span class="p">),</span>
-            <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
-            <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
-        <span class="p">)</span>
-
-    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
-        <span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;vlon&quot;</span><span class="p">],</span>
-        <span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;vlat&quot;</span><span class="p">],</span>
-        <span class="n">s</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-        <span class="n">transform</span><span class="o">=</span><span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">(),</span>
-        <span class="n">color</span><span class="o">=</span><span class="s2">&quot;tab:green&quot;</span>
-    <span class="p">)</span>
-
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">Wlon</span><span class="p">,</span> <span class="n">Elon</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">Slat</span><span class="p">,</span> <span class="n">Nlat</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
-
-    <span class="n">ax</span><span class="o">.</span><span class="n">coastlines</span><span class="p">()</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ispy.TargetStation<span class="o">?</span>
 </pre></div>
 </div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Put in the approximate coordinates of the points we want</span>
-<span class="c1"># Specify that we want the George Town point to be on the boundary</span>
-<span class="n">target_GeorgeTown</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">TargetStation</span><span class="p">(</span><span class="s2">&quot;George Town&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">59</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">target_offshore</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">TargetStation</span><span class="p">(</span><span class="s2">&quot;Offshore&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">35</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">target_Natal</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">TargetStation</span><span class="p">(</span><span class="s2">&quot;Natal&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">35</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="c1"># Visualise the points</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">setup_plot_area</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
-<span class="n">target_GeorgeTown</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">target_offshore</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">target_Natal</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">gl</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">gridlines</span><span class="p">()</span>
-<span class="n">gl</span><span class="o">.</span><span class="n">xlines</span><span class="p">,</span> <span class="n">gl</span><span class="o">.</span><span class="n">ylines</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7ffeb405be10&gt;
-</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/quickstart_6_1.png" src="_images/quickstart_6_1.png" />
-</div>
-</div>
-<p>The map shows the approximate location of the points we want to join. We can now find the model grid points nearest to them and plot them.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Convert the target stations to model stations</span>
-<span class="n">model_GeorgeTown</span> <span class="o">=</span> <span class="n">target_GeorgeTown</span><span class="o">.</span><span class="n">to_model_station</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
-<span class="n">model_offshore</span> <span class="o">=</span> <span class="n">target_offshore</span><span class="o">.</span><span class="n">to_model_station</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
-<span class="n">model_Natal</span> <span class="o">=</span> <span class="n">target_Natal</span><span class="o">.</span><span class="n">to_model_station</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
-
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">setup_plot_area</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
-
-<span class="c1"># Plot the model stations (circles)</span>
-<span class="n">model_GeorgeTown</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">model_offshore</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">model_Natal</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-<span class="c1"># Compare with the target station (crosses)</span>
-<span class="n">target_GeorgeTown</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">target_offshore</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">target_Natal</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-<span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7ffeabc16350&gt;
+<span class="ansi-red-fg">Init signature:</span> ispy.TargetStation(name, lon, lat, boundary=<span class="ansi-bold" style="color: rgb(0,135,0)">True</span>)
+<span class="ansi-red-fg">Docstring:</span>
+Represents a target station
+
+Parameters
+----------
+name : str
+    Name of the target station
+lon : float
+    Longitude of the target station
+lat : float
+    Latitude of the target station
+boundary : bool, optional
+    Whether the station should be sited on a boundary point or not, by default True
+
+Attributes
+----------
+name : str
+    Name of the target station
+target_lon : float
+    Longitude of the target station
+target_lat : float
+    Latitude of the target station
+boundary : bool
+    Whether the station should be sited on a boundary point or not
+
+Example
+-------
+&gt;&gt;&gt; import iconspy as ispy
+&gt;&gt;&gt; target_station = ispy.TargetStation(&#34;My Station&#34;, 10.0, 20.0)
+&gt;&gt;&gt; target_station.plot()
+<span class="ansi-red-fg">File:</span>           /work/mh0256/m301014/iconspy/iconspy/core.py
+<span class="ansi-red-fg">Type:</span>           type
+<span class="ansi-red-fg">Subclasses:</span>
 </pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">target_ne_corner</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">TargetStation</span><span class="p">(</span><span class="s2">&quot;NE Corner&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mf">83.72</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.928</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">target_nw_corner</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">TargetStation</span><span class="p">(</span><span class="s2">&quot;NW Corner&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mf">95.794</span><span class="p">,</span> <span class="o">-</span><span class="mf">4.976</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">target_sw_corner</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">TargetStation</span><span class="p">(</span><span class="s2">&quot;SW Corner&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mf">92.592</span><span class="p">,</span> <span class="o">-</span><span class="mf">23.219</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">target_se_corner</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">TargetStation</span><span class="p">(</span><span class="s2">&quot;SE Corner&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mf">70.285</span><span class="p">,</span> <span class="o">-</span><span class="mf">18.491</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">setup_plot_area_quickstart</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
+
+<span class="n">target_ne_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">target_se_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">target_sw_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">target_nw_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/quickstart_8_1.png" src="_images/quickstart_8_1.png" />
+<img alt="_images/quickstart_7_0.png" src="_images/quickstart_7_0.png" />
 </div>
 </div>
 </section>
-<section id="Connect-stations-to-form-sections">
-<h2>Connect stations to form sections<a class="headerlink" href="#Connect-stations-to-form-sections" title="Link to this heading"></a></h2>
+<section id="The-model-station">
+<h3>The model station<a class="headerlink" href="#The-model-station" title="Link to this heading"></a></h3>
+<p>A <code class="docutils literal notranslate"><span class="pre">TargetStation</span></code> will not typically lie exactly on a model grid point. We can convert these stations to model stations as such:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">shortest</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span>
-    <span class="s2">&quot;Shortest Section (sum of edge lengths)&quot;</span><span class="p">,</span>
-    <span class="n">model_GeorgeTown</span><span class="p">,</span>
-    <span class="n">model_offshore</span><span class="p">,</span>
-    <span class="n">ds_IsD</span><span class="p">,</span>
-    <span class="n">section_type</span><span class="o">=</span><span class="s2">&quot;shortest&quot;</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Convert the target stations to model stations</span>
+<span class="n">model_ne_corner</span> <span class="o">=</span> <span class="n">target_ne_corner</span><span class="o">.</span><span class="n">to_model_station</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
+<span class="n">model_nw_corner</span> <span class="o">=</span> <span class="n">target_nw_corner</span><span class="o">.</span><span class="n">to_model_station</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
+<span class="n">model_sw_corner</span> <span class="o">=</span> <span class="n">target_sw_corner</span><span class="o">.</span><span class="n">to_model_station</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
+<span class="n">model_se_corner</span> <span class="o">=</span> <span class="n">target_se_corner</span><span class="o">.</span><span class="n">to_model_station</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
 
-<span class="n">great_circle</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span>
-    <span class="s2">&quot;Approximate great circle&quot;</span><span class="p">,</span>
-    <span class="n">model_offshore</span><span class="p">,</span>
-    <span class="n">model_Natal</span><span class="p">,</span>
-    <span class="n">ds_IsD</span><span class="p">,</span>
-    <span class="n">section_type</span><span class="o">=</span><span class="s2">&quot;great circle&quot;</span>
-<span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">setup_plot_area_quickstart</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
 
-<span class="n">contour</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span>
-    <span class="s2">&quot;Close to 500 m contour&quot;</span><span class="p">,</span>
-    <span class="n">model_Natal</span><span class="p">,</span>
-    <span class="n">model_GeorgeTown</span><span class="p">,</span>
-    <span class="n">ds_IsD</span><span class="p">,</span>
-    <span class="n">section_type</span><span class="o">=</span><span class="s2">&quot;contour&quot;</span><span class="p">,</span>
-    <span class="n">contour_data</span><span class="o">=</span><span class="n">ds_fx</span><span class="p">[</span><span class="s2">&quot;column_thick_e&quot;</span><span class="p">],</span>
-    <span class="n">contour_target</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="c1"># Plot the model stations (circles)</span>
+<span class="n">model_ne_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">model_nw_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">model_sw_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">model_se_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">setup_plot_area</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
-<span class="n">shortest</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
-<span class="n">contour</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
-<span class="n">great_circle</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="c1"># Compare with the target station (crosses)</span>
+<span class="n">target_ne_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">target_nw_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">target_sw_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">target_se_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="n">fig</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-
-<span class="n">cax</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">tripcolor</span><span class="p">(</span>
-    <span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;clon&quot;</span><span class="p">],</span>
-    <span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;clat&quot;</span><span class="p">],</span>
-    <span class="n">ds_fx</span><span class="p">[</span><span class="s2">&quot;column_thick_c&quot;</span><span class="p">],</span>
-    <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-    <span class="n">vmax</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
-    <span class="n">cmap</span><span class="o">=</span><span class="n">cmo</span><span class="o">.</span><span class="n">deep</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Column thickness&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.colorbar.Colorbar at 0x7ffea919b3d0&gt;
+&lt;matplotlib.legend.Legend at 0x7ffea9846bd0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/quickstart_10_1.png" src="_images/quickstart_10_1.png" />
+<img alt="_images/quickstart_9_1.png" src="_images/quickstart_9_1.png" />
 </div>
 </div>
+<p>The <code class="docutils literal notranslate"><span class="pre">ModelStation</span></code> uses a “ball tree” to find the nearest vertex on the model grid to it. If we indicate we want a boundary vertex in our <code class="docutils literal notranslate"><span class="pre">TargetStation</span></code>, this will be a point on land. For example, our North East Corner <code class="docutils literal notranslate"><span class="pre">TargetStation</span></code> sits over the ocean (blue cross); however, we have specified we want a boundary vertex so the <code class="docutils literal notranslate"><span class="pre">ModelStation</span></code> we identify is at the coast (blue circle).</p>
+<p>Its worth noting that the ball tree understand the Earth’s sphericity, so you don’t need to worry about using longitudes of [-180, 180) or [0, 360). You will <strong>always</strong> get the closest “valid” point.</p>
+<p>If you want to see the index of the vertex of the <code class="docutils literal notranslate"><span class="pre">ModelStation</span></code> you can do so as follows:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model_ne_corner</span><span class="o">.</span><span class="n">vertex</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+4764
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Connect-stations-to-form-sections">
+<h2>Connect stations to form sections<a class="headerlink" href="#Connect-stations-to-form-sections" title="Link to this heading"></a></h2>
+<p>We construct sections using <code class="docutils literal notranslate"><span class="pre">ispy.Section</span></code>. This is called with a section name, a starting model station and an ending model station, <code class="docutils literal notranslate"><span class="pre">ds_IsD</span></code> which describes the model grid, and a description of type of section we want.</p>
+<p>Valid arguments for <code class="docutils literal notranslate"><span class="pre">section_type</span></code> are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;great</span> <span class="pre">circle&quot;</span></code>: approximates the great circle</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;shortest&quot;</span></code>: the shortest path</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;contour&quot;</span></code>: approximate a contour</p></li>
+</ul>
+<p>In the below we look at how the great circle and shortest paths differ:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>ispy.Section<span class="o">?</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">Init signature:</span>
+ispy.Section(
+    name,
+    model_station_a,
+    model_station_b,
+    ds_IsD,
+    section_type=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+    contour_target=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+    contour_data=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+)
+<span class="ansi-red-fg">Docstring:</span>      &lt;no docstring&gt;
+<span class="ansi-red-fg">File:</span>           /work/mh0256/m301014/iconspy/iconspy/core.py
+<span class="ansi-red-fg">Type:</span>           type
+<span class="ansi-red-fg">Subclasses:</span>     LandSection, _ReconstructedSection, CombinedSection
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">southern_edge_great_circle</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span>
+    <span class="s2">&quot;Southern Edge (great circle)&quot;</span><span class="p">,</span>
+    <span class="n">model_se_corner</span><span class="p">,</span>
+    <span class="n">model_sw_corner</span><span class="p">,</span>
+    <span class="n">ds_IsD</span><span class="p">,</span>
+    <span class="n">section_type</span><span class="o">=</span><span class="s2">&quot;great circle&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">southern_edge_shortest</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span>
+    <span class="s2">&quot;Southern Edge (shortest)&quot;</span><span class="p">,</span>
+    <span class="n">model_se_corner</span><span class="p">,</span>
+    <span class="n">model_sw_corner</span><span class="p">,</span>
+    <span class="n">ds_IsD</span><span class="p">,</span>
+    <span class="n">section_type</span><span class="o">=</span><span class="s2">&quot;shortest&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">setup_plot_area_quickstart</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
+<span class="n">model_se_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">model_sw_corner</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">southern_edge_great_circle</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">southern_edge_shortest</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/quickstart_15_0.png" src="_images/quickstart_15_0.png" />
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">&quot;great</span> <span class="pre">circle&quot;</span></code> option approximates the real great circle on the globe, following 13 edges. Meanwhile, the <code class="docutils literal notranslate"><span class="pre">&quot;shortest</span> <span class="pre">path&quot;</span></code> finds a route between the start and end points which takes only 11 edges and so is shorter. Notice how the shortest path looks nothing like the great circle!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">southern_edge_great_circle</span><span class="o">.</span><span class="n">edge_path</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">southern_edge_shortest</span><span class="o">.</span><span class="n">edge_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(13, 11)
+</pre></div></div>
+</div>
+<p>When we provide <code class="docutils literal notranslate"><span class="pre">ModelStation</span></code>s to <code class="docutils literal notranslate"><span class="pre">ispy</span></code> and ask it make a section, <code class="docutils literal notranslate"><span class="pre">ispy</span></code> constructs a “graph” representation of the model grid. In this representation the model vertices are treated as nodes and the cell edges which connect them are assigned “weights”. Using Djikstra’s algorithm, we then identify the path between the two <code class="docutils literal notranslate"><span class="pre">ModelStation</span></code>s which minimises the sum of the weights from the edges traversed. When we look for the <code class="docutils literal notranslate"><span class="pre">&quot;shortest</span> <span class="pre">path&quot;</span></code> the weights used are just the length of
+the edges. When we use the <code class="docutils literal notranslate"><span class="pre">&quot;great</span> <span class="pre">circle&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">ispy</span></code> calculates the theoretical great circle with the weights corresponding to the distance of a particular edge from this line.</p>
+<p>We can also try and define sections which approximate bathymetry contours. To do this we need points which start and end near the contours we want to examine, and preferrably well defined bathymetry. Given the coarseness of the R2B4 grid this may look funny, but the method comes into its own on higher resolution grids.</p>
+<p>Let’s see if we can create a section which approximates the bathmetry of the mid-Atlantic ridge.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define our targer stations for the Mid-Atlantic Ridge section and convert them to model stations</span>
+<span class="n">target_mar_n</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">TargetStation</span><span class="p">(</span><span class="s2">&quot;MAR North&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mf">34.0</span><span class="p">,</span> <span class="mf">36.0</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">target_mar_s</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">TargetStation</span><span class="p">(</span><span class="s2">&quot;MAR South&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mf">26.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">model_mar_n</span> <span class="o">=</span> <span class="n">target_mar_n</span><span class="o">.</span><span class="n">to_model_station</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
+<span class="n">model_mar_s</span> <span class="o">=</span> <span class="n">target_mar_s</span><span class="o">.</span><span class="n">to_model_station</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
+
+<span class="c1"># Create a contour section</span>
+<span class="n">mar_contour</span> <span class="o">=</span> <span class="n">ispy</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span>
+    <span class="s2">&quot;Mid-Atlantic Ridge (contour)&quot;</span><span class="p">,</span>
+    <span class="n">model_mar_n</span><span class="p">,</span>
+    <span class="n">model_mar_s</span><span class="p">,</span>
+    <span class="n">ds_IsD</span><span class="p">,</span>
+    <span class="n">section_type</span><span class="o">=</span><span class="s2">&quot;contour&quot;</span><span class="p">,</span>
+    <span class="n">contour_data</span><span class="o">=</span><span class="n">ds_fx</span><span class="p">[</span><span class="s2">&quot;column_thick_e&quot;</span><span class="p">],</span>
+    <span class="n">contour_target</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="c1"># Let&#39;s see how we did!</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">setup_plot_area_mar</span><span class="p">(</span><span class="n">ds_IsD</span><span class="p">)</span>
+
+<span class="n">cax</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">tricontourf</span><span class="p">(</span>
+    <span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;elon&quot;</span><span class="p">],</span>
+    <span class="n">ds_IsD</span><span class="p">[</span><span class="s2">&quot;elat&quot;</span><span class="p">],</span>
+    <span class="n">ds_fx</span><span class="p">[</span><span class="s2">&quot;column_thick_e&quot;</span><span class="p">],</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="n">cmo</span><span class="o">.</span><span class="n">amp_r</span><span class="p">,</span>
+    <span class="n">levels</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">3000</span><span class="p">,</span> <span class="mi">4000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">6000</span><span class="p">],</span>
+<span class="p">)</span>
+
+
+<span class="n">model_mar_n</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">model_mar_s</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">mar_contour</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">gridlines</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Column thickness&quot;</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.colorbar.Colorbar at 0x7ffe90b16b10&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/quickstart_20_1.png" src="_images/quickstart_20_1.png" />
+</div>
+</div>
+<p>Looks like we did pretty well!</p>
 <p>We can get the orientation of edges along a path by running the below:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -874,7 +994,7 @@ Coordinates:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/quickstart_15_0.png" src="_images/quickstart_15_0.png" />
+<img alt="_images/quickstart_26_0.png" src="_images/quickstart_26_0.png" />
 </div>
 </div>
 <p>Regions have paths of edges and also edge orientations that we can use for calcualting fluxes into the region</p>
@@ -2126,7 +2246,7 @@ Attributes:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/quickstart_24_0.png" src="_images/quickstart_24_0.png" />
+<img alt="_images/quickstart_35_0.png" src="_images/quickstart_35_0.png" />
 </div>
 </div>
 <p>In the above we can see a funny straight line in the blue and green section. This is a bug that will be adressed in a future version. It arises from the repeating of the first vertex along the section at the end of the section. The edge paths remain unaffected though.</p>
@@ -2144,7 +2264,7 @@ Attributes:
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, Fraser William Goldsworth.</p>
+    <p>&#169; Copyright 2026, Fraser William Goldsworth.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

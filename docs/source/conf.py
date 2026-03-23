@@ -5,11 +5,21 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+# from importlib.metadata import version, PackageNotFoundError
+import importlib
+from datetime import datetime
 
 project = 'iconspy'
-copyright = '2025, Fraser William Goldsworth'
+
+year = str(datetime.now().year)
+copyright = f'{year}, Fraser William Goldsworth'
+
 author = 'Fraser William Goldsworth'
-release = '0.1.0'
+
+try:
+    release = importlib.metadata.version("iconspy")
+except importlib.metadata.PackageNotFoundError:
+    release = "0.0.0"  # fallback for local/dev usage
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

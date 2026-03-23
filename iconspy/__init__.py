@@ -1,5 +1,11 @@
 # Package metadata
-__version__ = "0.1.0"
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("your-package-name")
+except PackageNotFoundError:
+    __version__ = "0.0.0"  # fallback for local/dev usage
+
 __author__ = "Fraser William Goldsworth"
 
 # Import key functionality to simplify access

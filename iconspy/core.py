@@ -472,23 +472,42 @@ class _ReconstructedSection(Section):
 
 class CombinedSection(Section):
     def __init__(self, name, section_list, ds_IsD):
-        # Want to be able to combine two section into one.
+        # Want to be able to combine two sections into one.
 
         # Check the sections connect...
-        assert section_list[0].vertex_path.isel(step_in_path_v=-1) == section_list[1].vertex_path.isel(step_in_path_v=0)
+        for i in range(len(section_list) - 1):
+            try:
+                assert section_list[i].vertex_path.isel(step_in_path_v=-1) == section_list[i + 1].vertex_path.isel(step_in_path_v=0)
+            except AssertionError:
+                raise ValueError(f"The final vertex in section_list[{i}] does not connect to the first vertex in section_list[{i + 1}]")
+
         self.name = name
         self.station_a = section_list[0].station_a
         self.station_b = section_list[-1].station_b
-        
-        if section_list[0].section_type == section_list[1].section_type:
-            section_type = section_list[0].section_type
+
+        # Set the section type
+        section_type = set([section.section_type for section in section_list])
+        if len(section_type) == 1:
+            # All sections have the same type so we preserve it
+            section_type = list(section_type)[0]
         else:
+            # There are a mixture of section types
             section_type = "mixed"
         self.section_type = section_type
         
-        self.vertex_path = xr.concat([section_list[0].vertex_path.isel(step_in_path_v=slice(0, -1)), section_list[1].vertex_path], dim="step_in_path_v")
-        self.edge_path = xr.concat([section_list[0].edge_path, section_list[1].edge_path], dim="step_in_path")
-        self.edge_orientation = None  # We can't be sure that the two sections have the same sign convention
+        # Stitch the vertex paths together
+        vertex_paths = [section_list[0].vertex_path]
+        for section in section_list[1:]:
+            next_vertex_path = section.vertex_path.isel(step_in_path_v=slice(1, None))
+            vertex_paths.append(next_vertex_path)
+        self.vertex_path = xr.concat(vertex_paths, dim="step_in_path_v")
+        
+        # Get the edge paths from the vertex path
+        # (We recalculate this to be on the safe side)
+        self.edge_path = vertex_path_to_edge_path(ds_IsD, self.vertex_path)
+        self.set_pyic_orientation_along_path(ds_IsD)
+        
+        # Get the new vertex coordinates from the vertex path
         self.vlon = ds_IsD["vlon"].sel(vertex=self.vertex_path)
         self.vlat = ds_IsD["vlat"].sel(vertex=self.vertex_path)   
 

@@ -105,7 +105,7 @@ def vertex_path_to_edge_path(ds_IsD, vertex_path):
     def _mode(*args, **kwargs):
         vals = mode(*args, **kwargs)
         # only return the mode (discard the count)
-        return vals[0].squeeze()
+        return vals[0]#.squeeze()
 
     def mode_xr(obj):
         # note: apply always moves core dimensions to the end

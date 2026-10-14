@@ -51,6 +51,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#conda-mamba-recommended">conda/mamba (recommended)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pip">pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#from-source">From source</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
@@ -86,30 +87,22 @@
              
   <section id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
-<p><code class="code docutils literal notranslate"><span class="pre">iconspy</span></code> can be downloaded from github. To obtain the source code run the command:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/fraserwg/iconspy.git
-</pre></div>
-</div>
 <section id="conda-mamba-recommended">
 <h2>conda/mamba (recommended)<a class="headerlink" href="#conda-mamba-recommended" title="Link to this heading"></a></h2>
-<p>To install the dependencies into an existing environment run:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>iconspy
-mamba<span class="w"> </span>install<span class="w"> </span>-f<span class="w"> </span>environment.yml
-</pre></div>
-</div>
-<p>or to create a new environment:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>iconspy
-mamba<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>environment.yml
-mamba<span class="w"> </span>activate<span class="w"> </span>ispy
-</pre></div>
-</div>
-<p>you can then install the package using:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>.
-</pre></div>
-</div>
+<p>To install into an existing environment run:</p>
+<p>(you can replace <cite>mamba</cite> with <cite>conda</cite> if that’s your preferred package manager</p>
 </section>
 <section id="pip">
 <h2>pip<a class="headerlink" href="#pip" title="Link to this heading"></a></h2>
+<p>To install with pip</p>
+</section>
+<section id="from-source">
+<h2>From source<a class="headerlink" href="#from-source" title="Link to this heading"></a></h2>
+<p><code class="code docutils literal notranslate"><span class="pre">iconspy</span></code> can be downloaded from github. To obtain the source code run the command:
+.. code-block:: bash</p>
+<blockquote>
+<div><p>git clone <a class="reference external" href="https://github.com/eerie-project/iconspy.git">https://github.com/eerie-project/iconspy.git</a></p>
+</div></blockquote>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>iconspy
 pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>

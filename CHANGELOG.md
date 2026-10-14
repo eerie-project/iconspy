@@ -1,4 +1,6 @@
 # Changelog
+## v0.2.X (unreleased)
+- Updated installation instructions
 
 ## v0.2.5 (21/08/2026)
 - Further updates to PyPi publishing

@@ -1,5 +1,6 @@
 # Changelog
 ## v0.2.X (unreleased)
+- Fixed error in installation instructions
 - Updated installation instructions
 
 ## v0.2.5 (21/08/2026)
